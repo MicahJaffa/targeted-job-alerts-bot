@@ -1,9 +1,8 @@
 name: targeted-job-alerts-bot
 
 on:
-  #schedule:
-  
-    #- cron: '00 21 * * 2,4'
+  schedule:
+    - cron: '0 16 * * 2'
   workflow_dispatch:
 
 permissions:
@@ -27,7 +26,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      
       - name: Create .env file
         run: echo "${{ secrets.ENV_FILE }}" > .env
 
