@@ -1,6 +1,7 @@
 import os
 import requests
 import time
+from score import score
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -257,7 +258,7 @@ DIVISION_QUERIES = {
     ],
 }
 ROLE_BLACKLIST = [
-    "reporter", "anchor", "journalist", "news", "correspondent",
+    "reporter", "anchor", "journalist", "news", "correspondent", "Trainer"
 ]
 TRUSTED_DOMAINS = [
     "linkedin.com", "teamworkonline.com", "workdayjobs.com",
@@ -344,7 +345,7 @@ def get_jobs() -> list:
                  }
 
             try:
-                print(f"[{div_on}/{len(DIVISION_QUERIES)}] Searching: '{division}'...")
+                print(f"[{div_on+1}/{len(DIVISION_QUERIES)}] Searching: '{division}'...")
                 response = session.get(url, headers=headers, params=querystring, timeout=timeout)
                 response.raise_for_status()
 
@@ -352,11 +353,11 @@ def get_jobs() -> list:
                 jobs = data if isinstance(data, list) else data.get("jobs", [])
                 job_amount = 0
                 div_on += 1
+                temp_jobs = []
+                
+
+                
                 for job in jobs:
-                    print(f"job amount: {job_amount}/{limits[div_on-1]}")
-                    if(job_amount >= limits[div_on-1]):
-                        print(f"to many jobs: {job_amount}")
-                        break
                     job_id = job.get("job_id")
                     if job_id and job_id in seen_ids:
                         continue
@@ -369,12 +370,23 @@ def get_jobs() -> list:
                     if job_id in seen_ids:
                         print(f"Skipping job {job_id}")
                         continue
+                    job["job_score"] = score(job, div_on)
                     job["agency_division"] = division
-                    all_jobs.append(job)
-                    save_posted_job(job_id)
-                    print(f"{job.get('job_title')} @ {job.get('employer_name')} → {job.get('agency_division')}")
-                    job_amount += 1
-                
+                    temp_jobs.append(job)
+                    print(f"{job.get('job_title')} @ {job.get('employer_name')} job score: {job.get('job_score')} → {job.get('agency_division')}")
+                top_jobs = []
+                for job in temp_jobs:
+                    if len(top_jobs) < limits[div_on - 1]:
+                        top_jobs.append(job)
+                    else:
+                        min_score_job = min(top_jobs, key=lambda x: x.get("job_score", 0))
+                        if job.get("job_score", 0) > min_score_job.get("job_score", 0):
+                            top_jobs.remove(min_score_job)
+                            top_jobs.append(job)
+                all_jobs.extend(top_jobs)
+                for job in top_jobs:
+                    print(f" saved job: {job.get('job_title')} @ {job.get('employer_name')} job score: {job.get('job_score')} → {job.get('agency_division')}")
+                    save_posted_job(job.get("job_id"))
             except requests.exceptions.HTTPError as e:
                 status = response.status_code
                 error_body = response.text.lower()

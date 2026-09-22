@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>SlackBot</Name>
     <RootNamespace>SlackBot</RootNamespace>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,6 +24,7 @@
   <ItemGroup>
     <Compile Include="app.py" />
     <Compile Include="job_search.py" />
+    <Compile Include="score.py" />
     <Compile Include="slack_bot.py" />
   </ItemGroup>
   <ItemGroup>
