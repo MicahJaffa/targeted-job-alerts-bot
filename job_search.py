@@ -264,6 +264,7 @@ TRUSTED_DOMAINS = [
     "greenhouse.io", "lever.co", "indeed.com", "nfl.com",
     "nba.com", "mlb.com", "espncareers.com", "nike.com"
 ]
+limits = [3, 2, 2, 3, 2, 1]
 def get_previously_posted_jobs():
     if not os.path.exists("posted_jobs.txt"):
         return set()
@@ -330,27 +331,32 @@ def get_jobs() -> list:
     timeout = 120
 
     print(f"Running {len(DIVISION_QUERIES)} queries...")
-
+    div_on = 0
     with requests.Session() as session:
         for division, queries in DIVISION_QUERIES.items():
             for search_term in queries:
                 querystring = {
                     "query": search_term,
-                    "num_pages": "3",
+                    "num_pages": "2",
                     "country": "us",
                     "date_posted": "month",
                     "employment_types": "INTERN",
                  }
 
             try:
-                print(f"[0/{len(DIVISION_QUERIES)}] Searching: '{division}'...")
+                print(f"[{div_on}/{len(DIVISION_QUERIES)}] Searching: '{division}'...")
                 response = session.get(url, headers=headers, params=querystring, timeout=timeout)
                 response.raise_for_status()
 
                 data = response.json().get("data", {})
                 jobs = data if isinstance(data, list) else data.get("jobs", [])
-
+                job_amount = 0
+                div_on += 1
                 for job in jobs:
+                    print(f"job amount: {job_amount}/{limits[div_on-1]}")
+                    if(job_amount >= limits[div_on-1]):
+                        print(f"to many jobs: {job_amount}")
+                        break
                     job_id = job.get("job_id")
                     if job_id and job_id in seen_ids:
                         continue
@@ -367,6 +373,8 @@ def get_jobs() -> list:
                     all_jobs.append(job)
                     save_posted_job(job_id)
                     print(f"{job.get('job_title')} @ {job.get('employer_name')} → {job.get('agency_division')}")
+                    job_amount += 1
+                
             except requests.exceptions.HTTPError as e:
                 status = response.status_code
                 error_body = response.text.lower()
