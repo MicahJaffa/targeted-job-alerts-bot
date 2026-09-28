@@ -12,7 +12,7 @@ def run():
     jobs = get_jobs()
     post_jobs(jobs)
     print(f"Posted {len(jobs)} jobs!")
-    
+    #ee
 #schedule.every().day.at("09:00").do(run)
 #schedule.every().day.at("17:00").do(run)
 #schedule.every().tuesday.at("17:00").do(run)
